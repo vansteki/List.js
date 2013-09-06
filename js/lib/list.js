@@ -1,3 +1,7 @@
+var List = {
+
+};
+
 var decoCard = function(config) {
     if (config.newCard === 'FALSE' || Object.keys(config).length === 0)
         decoOldCard();
@@ -58,7 +62,6 @@ var bindListSortable = function() {
         },
         stop: function(event, ui) {
             $(ui.item.context).removeClass('list-skew');
-            //bind to new list
         }
     });
 };
@@ -88,6 +91,7 @@ var appConfig = {
     listWidth: 400,
     adjustBodyOffset: 340,
     cardPlaceholderWidth: 300,
+    inputCache: '',
     listDom: "<div class='list'>" + 
                 "<div class='list-title-banner'>" + 
                 "<span class='list-title'>TITLE</span>" + 
@@ -114,8 +118,7 @@ var appConfig = {
                     "<tbody>" + 
                     "<tr>" + 
                         "<td>" + "地址 </td>" + 
-                        "<td class='address'>" + 
-                        "THU</td>" + 
+                        "<td class='address'>" + "THU</td>" + 
                     "</tr>" + 
                     "<tr>" + 
                         "<td>" + "經緯度 </td>" + 
@@ -154,7 +157,8 @@ $(function() {
             newCard: 'TRUE',
             whichInlist: thisInList //current .in-list
         });
-        bindNewForm(thisInList);
+        // bindNewForm(thisInList);
+        bindForm();
     });
 
 });
@@ -163,17 +167,17 @@ var bindNewForm = function(thisInList) {
     thisInList.find('.address').editable({
         showbuttons: 'bottom'
     });
-    $('.latlng').editable({
+    thisInList.find('.latlng').editable({
         showbuttons: 'bottom'
     });
-    $('.card-title').editable({
+    thisInList.find('.card-title').editable({
         showbuttons: 'bottom'
     });
-    $('.list-title').editable({
-        showbuttons: 'bottom'
-    });
+    // $('.list-title').editable({
+    //     showbuttons: 'bottom'
+    // });
 
-    thisInList.find('.card-title, .address, .latlng').on('hidden', function(e, reason) {
+    thisInList.find('.list-title, .card-title, .address, .latlng').on('hidden', function(e, reason) {
         if (thisInList.find('.card-content td').hasClass('editable-open'))
             thisInList.sortable('disable');
         else
@@ -199,17 +203,40 @@ var bindForm = function() {
         showbuttons: 'bottom'
     });
 
-    $('.card-title, .address, .latlng').on('shown', function(e, reason) {
-        $('.in-list').sortable("disable");
+    $('.list-title, .card-title, .address, .latlng').on('shown', function(e, reason) {
+        $('.in-list').sortable("disable");        
+        // find input after form show
+        var inputText = $(this).siblings().find('input'); // == $(e.currentTarget).siblings()...
+        var hasCache = $(this).attr('data-cache');
+        if (hasCache) inputText.val($(this).attr('data-cache'));
+
+        inputText.on('keyup mouseup', function(e) {
+            console.log('keyup or mouseup');
+            console.log($(this).val());
+            localStorage.tmp = $(this).val();
+        });
     });
 
-    $('.card-title, .address, .latlng').on('hidden', function(e, reason) {
+    $('.list-title, .card-title, .address, .latlng').on('hidden', function(e, reason) {
+        console.log(reason);
         if ($('.card-content td').hasClass('editable-open'))
             $('.in-list').sortable('disable');
         else
             $('.in-list').sortable('enable');
-    });
 
+        if (reason === 'nochange') {
+            console.log('nochange');
+        }
+
+        if (reason === 'onblur' || reason === 'manual'){
+            $(e.currentTarget).attr('data-cache', localStorage.tmp);
+        }
+
+        if( reason === 'cancel'){
+            localStorage.tmp = '';
+            $(this).removeAttr('data-cache');            
+        }
+    });
     /*   $('.in-list').delegate('.address','click', function(){
     console.log($(this));
     console.dir(this);
