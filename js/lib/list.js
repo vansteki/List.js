@@ -5,7 +5,15 @@ var appConfig = {
     adjustBodyOffset: 340,
     cardPlaceholderWidth: 300,
     inputCache: '',
-    listDom: "<div class='list'>" + 
+    listPlaceholder:
+        "<div class='add-list-placeholder'>" +
+            "<div class='add-list'>" +
+                'Add a List ...' +
+            '</div>' +
+        '<div>'
+    ,
+    listDom: 
+                "<div class='list'>" + 
                 "<div class='list-title-banner'>" + 
                 "<span class='list-title'>TITLE</span>" + 
                 "</div>" + 
@@ -16,7 +24,8 @@ var appConfig = {
                 '</div>' + 
                 "<a id='add-card' href='#'>Add a card…</a>" + 
                 '</div>',
-    cardDom: "<div class='card'>" + 
+    cardDom: 
+                "<div class='card'>" + 
                 "<div class='card-header'>" + 
                 "<span class='card-title'>" + 'Feeds</span>' + 
                 '</div>' + 
@@ -48,23 +57,72 @@ var List =
     adjustBodyWidth: function(nPixels) 
     {
         if (document.body.style.width === '') {
-            $('body').css('width', document.body.clientWidth + 0);
+            $('body').css('width', document.body.clientWidth + 0); //document.body.style.width === will be set to 0 not ''
         }else{
             $('body').css('width', parseInt($('body').css('width'), 10) + nPixels);
         }
         console.log($('body').css('width'));
     },
-    iniListBoxMaxHeight: function()
+    iniBodyWidth: function(){
+        var listWidth = $('.list')[0].offsetWidth;
+        var listPlaceholderWidth = $('.add-list-placeholder')[0].offsetWidth;
+        var totalListsWidth = $('.list')[0].offsetWidth * $('.list').length;
+        if( totalListsWidth + listPlaceholderWidth + 10 > document.body.clientWidth)
+            $('body').css('width', parseInt($('body').css('width'), 10) + document.body.clientWidth - totalListsWidth);
+    },
+    setListBoxMaxHeight: function()
     {
         //when to show scrollbar
         // $('.list-box').css('max-height', document.body.scrollHeight - 150);
         var offSet = ( $('.list').position().top + $('.list-box').position().top ) * 2;
-        $('.list-box').css('max-height', documnet.documentElement.clientHeight - offSet);
+        $('.list-box').css('max-height', document.documentElement.clientHeight - offSet);
     },
     form:
     {
+        loopBind: function(){
+            var n = $('.list').length;
+            for(var i = 0; i <= n; i++)
+            {
+                var thisList = $('.list')[i];
+                $(thisList).find('.address, .latlng, .card-title, .list-title').editable({
+                    showbuttons: 'bottom'
+                });
+
+                $(thisList).find('.list-title, .card-title, .address, .latlng').on('shown', function(e, reason) {
+                    $(thisList).find('.in-list').sortable( "disable" ); 
+
+                    var inputText = $(this).siblings().find('input');  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
+                    var hasCache = $(this).attr('data-cache');
+                    if (hasCache) inputText.val($(this).attr('data-cache'));
+                    
+                    inputText.on('keyup mouseup', function(e){ 
+                        localStorage.listFormInputCache = $(this).val(); 
+                    });
+                });
+
+                $(thisList).find('.list-title, .card-title, .address, .latlng').on('hidden', function(e, reason) {
+                        console.log(reason);
+                        if ( $(thisList).find('.card-content td').hasClass('editable-open'))
+                             $(thisList).find('.in-list').sortable('disable');
+                        else
+                             $(thisList).find('.in-list').sortable('enable');
+               
+                        if (reason === 'nochange') console.log('nochange');
+        
+                        if (reason === 'onblur' || reason === 'manual') {
+                            $(e.currentTarget).attr('data-cache', localStorage.listFormInputCache);
+                        }
+            
+                    if( reason === 'cancel') {
+                        localStorage.listFormInputCache = '';
+                        $(this).removeAttr('data-cache');            
+                    }
+                });
+            }
+        },
         bindForm: function() 
         {
+            console.log('bindForm');
             $('.address').editable({
                 showbuttons: 'bottom'
             });
@@ -79,13 +137,14 @@ var List =
             });
         
             $('.list-title, .card-title, .address, .latlng').on('shown', function(e, reason) {
-                $('.in-list').sortable("disable");
+                $('.in-list').sortable( "disable" ); 
+
                 var inputText = $(this).siblings().find('input');  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
                 var hasCache = $(this).attr('data-cache');
                 if (hasCache) inputText.val($(this).attr('data-cache'));
                 
                 inputText.on('keyup mouseup', function(e){ 
-                    localStorage.tmp = $(this).val(); 
+                    localStorage.listFormInputCache = $(this).val(); 
                 });
             });
         
@@ -96,21 +155,19 @@ var List =
                 else
                     $('.in-list').sortable('enable');
         
-                if (reason === 'nochange') {
-                    console.log('nochange');
+                if (reason === 'nochange') console.log('nochange');
+     
+                if (reason === 'onblur' || reason === 'manual') {
+                    $(e.currentTarget).attr('data-cache', localStorage.listFormInputCache);
                 }
         
-                if (reason === 'onblur' || reason === 'manual'){
-                    $(e.currentTarget).attr('data-cache', localStorage.tmp);
-                }
-        
-                if( reason === 'cancel'){
-                    localStorage.tmp = '';
+                if( reason === 'cancel') {
+                    localStorage.listFormInputCache = '';
                     $(this).removeAttr('data-cache');            
                 }
             });
         },
-        bindNewForm: function(thisInList) 
+        bindNewForm: function(config) 
         {
             $('.address').editable({
                 showbuttons: 'bottom'
@@ -124,27 +181,72 @@ var List =
             $('.list-title').editable({
                 showbuttons: 'bottom'
             });
-        
-            thisInList.find('.card-title, .address, .latlng').on('hidden', function(e, reason) {
-                if (thisInList.find('.card-content td').hasClass('editable-open'))
-                    thisInList.sortable('disable');
+
+
+            config.inList.find('.card-title, .address, .latlng').on('shown', function(e, reason) {
+                config.inList.sortable("disable");
+
+                var inputText = $(this).siblings().find('input');  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
+                var hasCache = $(this).attr('data-cache');
+                if (hasCache) inputText.val($(this).attr('data-cache'));
+                
+                inputText.on('keyup mouseup', function(e){ 
+                    localStorage.listFormInputCache = $(this).val(); 
+                });                
+            });
+
+            config.inList.find('.card-title, .address, .latlng').on('hidden', function(e, reason) {
+                if (config.inList.find('.card-content td').hasClass('editable-open'))
+                    config.inList.sortable('disable');
                 else
-                    thisInList.sortable('enable');
+                    config.inList.sortable('enable');
+
+                if (reason === 'nochange') console.log('nochange');
+     
+                if (reason === 'onblur' || reason === 'manual') {
+                    $(e.currentTarget).attr('data-cache', localStorage.listFormInputCache);
+                }
+        
+                if( reason === 'cancel') {
+                    localStorage.listFormInputCache = '';
+                    $(this).removeAttr('data-cache');            
+                }                
             });
         
-            thisInList.find('.card-title, .address, .latlng').on('shown', function(e, reason) {
-                thisInList.sortable("disable");
-            });
+
         }
     },
     list:
     {
         add: function() {
+            var lastList = $(appConfig.zone).find('.list').last(); console.log(lastList);
+            var lastInList = $(lastList).find('in-list');
+            var lastListObj = {
+                list: lastList,
+                inList: lastInList
+            };            
             List.adjustBodyWidth(appConfig.adjustBodyOffset);
             $(appConfig.zone).append(appConfig.listDom);
             List.card.bindCardSortable();
-            List.iniListBoxMaxHeight();
-            List.form.bindForm();
+            List.setListBoxMaxHeight();
+            // List.form.bindForm(); //TESTING
+            List.form.bindNewForm(lastListObj);
+        },
+        append: function(listPlaceholderPos){
+            List.adjustBodyWidth(appConfig.adjustBodyOffset);        
+            listPlaceholderPos.replaceWith(appConfig.listDom);
+            var lastList = $(appConfig.zone).find('.list').last(); console.log(lastList);
+            var lastInList = $(lastList).find('in-list');
+            var lastListObj = {
+                list: lastList,
+                inList: lastInList
+            };
+            console.log(lastListObj);
+            List.card.bindCardSortable();
+            // List.form.bindForm(); testing
+            List.form.bindNewForm(lastListObj);
+            List.setListBoxMaxHeight();
+            List.list.injectListPlaceholder();            
         },        
         bindListSortable: function()
         {
@@ -157,7 +259,22 @@ var List =
                     $(ui.item.context).removeClass('list-skew');
                 }
             });
-        }
+        },
+        injectListPlaceholder: function() {
+            $('#zone').append(appConfig.listPlaceholder);
+            //listplaceholder events handler
+            $('#zone').delegate('.add-list-placeholder', 'mouseover', function() {
+                $('#zone').sortable('disable');
+                var nextElementCount = $(this).next().siblings().length;                
+                if (nextElementCount >= 1) $('#zone').append($(this)); //move listplaceholder to default position
+            });
+            $('#zone').delegate('.add-list-placeholder', 'mouseout', function() { 
+                $('#zone').sortable('enable');
+            });
+            $('#zone').delegate('.add-list-placeholder', 'click', function() { 
+                $('#zone').sortable('enable');
+            });
+        }        
     },
     card: 
     {
@@ -168,8 +285,8 @@ var List =
                 newCard: 'TRUE',
                 whichInlist: thisInList //current .in-list
             });
-            // bindNewForm(thisInList);
-            List.form.bindForm();            
+            List.form.bindNewForm({ inList: thisInList });
+            // List.form.bindForm();            
         },        
         bindCardSortable: function()
         {
@@ -185,8 +302,9 @@ var List =
                 stop: function(event, ui) {
                     $('.card').css('cursor', 'pointer');
                     $(ui.item.context).removeClass('card-skew');
-                    var thiInList = $(ui.item.context).parents('.in-list');
-                    List.form.bindNewForm(thiInList);
+                    var thisInList = $(ui.item.context).parents('.in-list');
+                    List.form.bindNewForm({ inList: thisInList });
+                    // List.form.bindForm();  
                 }
             });
         },        
@@ -233,10 +351,13 @@ $(function() {
     List.list.bindListSortable();
     List.card.bindCardSortable();
     List.card.decoCard({ newCard: 'FALSE' });
-    List.form.bindForm();
-    List.iniListBoxMaxHeight();
+    // List.form.bindForm(); //testing
+    List.form.loopBind();
+    List.setListBoxMaxHeight();
+    List.list.injectListPlaceholder();
+    List.iniBodyWidth();
 
-    //main event handler
+    //main events handler
     $('body').delegate('#add-list-btn', 'click', function() {
         List.list.add();
     });
@@ -245,8 +366,12 @@ $(function() {
         List.card.add($(this));
     });
 
+    $('#zone').delegate('.add-list-placeholder', 'click', function() {
+        List.list.append($(this));
+    });
+
     $(window).resize(function() { 
-        List.iniListBoxMaxHeight(); 
+        List.setListBoxMaxHeight(); 
     });
 
 });

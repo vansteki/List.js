@@ -33,7 +33,6 @@ body{
     padding: 5px 10px 5px 10px;
     position:relative;
     width:300px;
-
 }
 
 .list:first-child{
@@ -64,6 +63,26 @@ transform: skew(-2deg, 3deg) ;
 -moz-transform: skew(-2deg, 3deg) ;
 -o-transform: skew(-2deg, 3deg) ;
 -ms-transform: skew(-2deg, 3deg) ;
+}
+.add-list-placeholder{
+    border-radius: 3px;
+    -webkit-box-shadow:0 1px 2px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(0, 0, 0, 0.1);
+    box-shadow:0 1px 2px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(0, 0, 0, 0.1);
+    width: 300px;
+    float:left;
+    margin:0 10px;
+    padding: 7px;
+    background-color: rgba(151, 96, 27, 0.51);
+    color: rgba(255, 255, 255, 0.71);
+    -webkit-transition: color 85ms ease-in;
+    transition: color 85ms ease-in;
+}
+.add-list-placeholder:hover{
+    background-color: rgba(150, 127, 47, 0.71);
+    color: white;
+    -webkit-transition: color 85ms ease-in;
+    transition: color 85ms ease-in;
+    cursor: pointer;
 }
 
 .card { 
