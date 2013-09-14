@@ -64,7 +64,7 @@ var List =
         console.log($('body').css('width'));
     },
     iniBodyWidth: function(){
-        var listWidth = $('.list')[0].offsetWidth;
+        var listWidth = $('.list')[0].offsetWidth || appConfig.listWidth;
         var listPlaceholderWidth = $('.add-list-placeholder')[0].offsetWidth;
         var totalListsWidth = $('.list')[0].offsetWidth * $('.list').length;
         if( totalListsWidth + listPlaceholderWidth + 10 > document.body.clientWidth)
@@ -77,9 +77,16 @@ var List =
         var offSet = ( $('.list').position().top + $('.list-box').position().top ) * 2;
         $('.list-box').css('max-height', document.documentElement.clientHeight - offSet);
     },
+    rePosAddListPlaceholder: function(){
+        var nextElementCount = $('.add-list-placeholder').next().siblings().length;                
+        if (nextElementCount >= 1) $('#zone').append($('.add-list-placeholder')); //move listplaceholder to default position
+    },
+    finalCheck: function(){
+        this.rePosAddListPlaceholder();
+    },
     form:
     {
-        loopBind: function(){
+        firstTimeBind: function(){ //loop DOM to bind each list
             var n = $('.list').length;
             for(var i = 0; i <= n; i++)
             {
@@ -87,42 +94,44 @@ var List =
                 $(thisList).find('.address, .latlng, .card-title, .list-title').editable({
                     showbuttons: 'bottom'
                 });
-
-                $(thisList).find('.list-title, .card-title, .address, .latlng').on('shown', function(e, reason) {
-                    $(thisList).find('.in-list').sortable( "disable" ); 
+                
+                $(thisList).find('.list-title, .card-title, .address, .latlng').on('shown', function(e, reason) {                    
+                    var thisList = $(e.currentTarget).parents('.list'); // console.log($(e.currentTarget).parents('.list'));
+                    $(thisList).find('.in-list').sortable( "disable" );
 
                     var inputText = $(this).siblings().find('input');  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
                     var hasCache = $(this).attr('data-cache');
                     if (hasCache) inputText.val($(this).attr('data-cache'));
                     
                     inputText.on('keyup mouseup', function(e){ 
-                        localStorage.listFormInputCache = $(this).val(); 
+                        appConfig.inputCache = $(this).val(); 
                     });
                 });
 
                 $(thisList).find('.list-title, .card-title, .address, .latlng').on('hidden', function(e, reason) {
-                        console.log(reason);
-                        if ( $(thisList).find('.card-content td').hasClass('editable-open'))
-                             $(thisList).find('.in-list').sortable('disable');
-                        else
-                             $(thisList).find('.in-list').sortable('enable');
+                    var thisList = $(e.currentTarget).parents('.list'); // console.log($(e.currentTarget).parents('.list'));
+                    $(thisList).find('.in-list').sortable( "disable" );
+
+                    if ( $(thisList).find('.card-content td').hasClass('editable-open'))
+                        $(thisList).find('.in-list').sortable('disable');
+                    else
+                        $(thisList).find('.in-list').sortable('enable');
                
-                        if (reason === 'nochange') console.log('nochange');
+                    if (reason === 'nochange') console.log('nochange');
         
-                        if (reason === 'onblur' || reason === 'manual') {
-                            $(e.currentTarget).attr('data-cache', localStorage.listFormInputCache);
-                        }
+                    if (reason === 'onblur' || reason === 'manual') {
+                        $(e.currentTarget).attr('data-cache', appConfig.inputCache);
+                    }
             
                     if( reason === 'cancel') {
-                        localStorage.listFormInputCache = '';
+                        appConfig.inputCache = '';
                         $(this).removeAttr('data-cache');            
                     }
                 });
             }
         },
-        bindForm: function() 
+        bindForm: function() //bind all in once
         {
-            console.log('bindForm');
             $('.address').editable({
                 showbuttons: 'bottom'
             });
@@ -144,7 +153,7 @@ var List =
                 if (hasCache) inputText.val($(this).attr('data-cache'));
                 
                 inputText.on('keyup mouseup', function(e){ 
-                    localStorage.listFormInputCache = $(this).val(); 
+                    appConfig.inputCache = $(this).val(); 
                 });
             });
         
@@ -158,16 +167,16 @@ var List =
                 if (reason === 'nochange') console.log('nochange');
      
                 if (reason === 'onblur' || reason === 'manual') {
-                    $(e.currentTarget).attr('data-cache', localStorage.listFormInputCache);
+                    $(e.currentTarget).attr('data-cache', appConfig.inputCache);
                 }
         
                 if( reason === 'cancel') {
-                    localStorage.listFormInputCache = '';
+                    appConfig.inputCache = '';
                     $(this).removeAttr('data-cache');            
                 }
             });
         },
-        bindNewForm: function(config) 
+        bindNewForm: function(config) //only bind new(latest) list which placeholder was clicked
         {
             $('.address').editable({
                 showbuttons: 'bottom'
@@ -179,9 +188,22 @@ var List =
                 showbuttons: 'bottom'
             });
             $('.list-title').editable({
-                showbuttons: 'bottom'
+                showbuttons: 'right',
+                url: '/post',
+                pk: 1,
+                    ajaxOptions: {
+                    dataType: 'json'
+                },
+                success: function(response, newValue) {
+                    if(!response) {
+                        return "Unknown error!";
+                    }          
+                    
+                    if(response.success === false) {
+                         return response.msg;
+                    }
+                }  
             });
-
 
             config.inList.find('.card-title, .address, .latlng').on('shown', function(e, reason) {
                 config.inList.sortable("disable");
@@ -191,7 +213,7 @@ var List =
                 if (hasCache) inputText.val($(this).attr('data-cache'));
                 
                 inputText.on('keyup mouseup', function(e){ 
-                    localStorage.listFormInputCache = $(this).val(); 
+                    appConfig.inputCache = $(this).val(); 
                 });                
             });
 
@@ -204,11 +226,11 @@ var List =
                 if (reason === 'nochange') console.log('nochange');
      
                 if (reason === 'onblur' || reason === 'manual') {
-                    $(e.currentTarget).attr('data-cache', localStorage.listFormInputCache);
+                    $(e.currentTarget).attr('data-cache', appConfig.inputCache);
                 }
         
                 if( reason === 'cancel') {
-                    localStorage.listFormInputCache = '';
+                    appConfig.inputCache = '';
                     $(this).removeAttr('data-cache');            
                 }                
             });
@@ -218,7 +240,7 @@ var List =
     },
     list:
     {
-        add: function() {
+        appendByButton: function() {
             var lastList = $(appConfig.zone).find('.list').last(); console.log(lastList);
             var lastInList = $(lastList).find('in-list');
             var lastListObj = {
@@ -229,10 +251,10 @@ var List =
             $(appConfig.zone).append(appConfig.listDom);
             List.card.bindCardSortable();
             List.setListBoxMaxHeight();
-            // List.form.bindForm(); //TESTING
-            List.form.bindNewForm(lastListObj);
+            List.form.bindForm(); //TESTING
+            // List.form.bindNewForm(lastListObj);
         },
-        append: function(listPlaceholderPos){
+        appendByPlaceholder: function(listPlaceholderPos){
             List.adjustBodyWidth(appConfig.adjustBodyOffset);        
             listPlaceholderPos.replaceWith(appConfig.listDom);
             var lastList = $(appConfig.zone).find('.list').last(); console.log(lastList);
@@ -241,10 +263,9 @@ var List =
                 list: lastList,
                 inList: lastInList
             };
-            console.log(lastListObj);
             List.card.bindCardSortable();
-            // List.form.bindForm(); testing
-            List.form.bindNewForm(lastListObj);
+            List.form.bindForm();
+            // List.form.bindNewForm(lastListObj);
             List.setListBoxMaxHeight();
             List.list.injectListPlaceholder();            
         },        
@@ -257,6 +278,7 @@ var List =
                 },
                 stop: function(event, ui) {
                     $(ui.item.context).removeClass('list-skew');
+                    List.finalCheck();
                 }
             });
         },
@@ -274,7 +296,7 @@ var List =
             $('#zone').delegate('.add-list-placeholder', 'click', function() { 
                 $('#zone').sortable('enable');
             });
-        }        
+        }
     },
     card: 
     {
@@ -285,8 +307,8 @@ var List =
                 newCard: 'TRUE',
                 whichInlist: thisInList //current .in-list
             });
-            List.form.bindNewForm({ inList: thisInList });
-            // List.form.bindForm();            
+            // List.form.bindNewForm({ inList: thisInList });
+            List.form.bindForm();            
         },        
         bindCardSortable: function()
         {
@@ -303,8 +325,10 @@ var List =
                     $('.card').css('cursor', 'pointer');
                     $(ui.item.context).removeClass('card-skew');
                     var thisInList = $(ui.item.context).parents('.in-list');
-                    List.form.bindNewForm({ inList: thisInList });
-                    // List.form.bindForm();  
+                    console.log('bindCardSortable');
+                    console.log(thisInList);
+                    // List.form.bindNewForm({ inList: thisInList });
+                    List.form.bindForm();  
                 }
             });
         },        
@@ -348,18 +372,18 @@ var List =
 
 $(function() {
     $.fn.editable.defaults.mode = 'inline';
+    List.card.decoCard({ newCard: 'FALSE' });
+    // List.form.firstTimeBind();
+    List.form.bindForm();
     List.list.bindListSortable();
     List.card.bindCardSortable();
-    List.card.decoCard({ newCard: 'FALSE' });
-    // List.form.bindForm(); //testing
-    List.form.loopBind();
     List.setListBoxMaxHeight();
     List.list.injectListPlaceholder();
     List.iniBodyWidth();
 
     //main events handler
     $('body').delegate('#add-list-btn', 'click', function() {
-        List.list.add();
+        List.list.appendByButton();
     });
 
     $('#zone').delegate('#add-card', 'click', function() {
@@ -367,7 +391,7 @@ $(function() {
     });
 
     $('#zone').delegate('.add-list-placeholder', 'click', function() {
-        List.list.append($(this));
+        List.list.appendByPlaceholder($(this));
     });
 
     $(window).resize(function() { 
