@@ -1,10 +1,20 @@
 body{
   padding-top: 3%;
   margin: 0;
-  position: relative;
+  position: absolute;
   z-index: 0;
+  background-color: black;
   background: url('http://i.imgur.com/XEtgQ.jpg');
 }
+
+.background-img {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: -100;
+}​
 
 .point{
     cursor: pointer;
@@ -58,11 +68,11 @@ body{
     /*max-height: 200px;*/
 }
 .list-skew {
-transform: skew(-2deg, 3deg) ;
--webkit-transform: skew(-2deg, 3deg) ;
--moz-transform: skew(-2deg, 3deg) ;
--o-transform: skew(-2deg, 3deg) ;
--ms-transform: skew(-2deg, 3deg) ;
+transform: skew(-5deg, 5deg) ;
+-webkit-transform: skew(-5deg, 5deg) ;
+-moz-transform: skew(-5deg, 5deg) ;
+-o-transform: skew(-5deg, 5deg) ;
+-ms-transform: skew(-5deg, 5deg) ;
 }
 .add-list-placeholder{
     border-radius: 3px;
