@@ -5,7 +5,7 @@ var appConfig = {
     placeholderWidth: 314,
     adjustBodyOffset: 340,
     cardPlaceholderWidth: 300,
-    inputCache: '',
+    maxList: 2,
     listPlaceholder:
         "<div class='add-list-placeholder'>" +
             "<div class='add-list'>" +
@@ -87,7 +87,7 @@ var List =
         this.rePosAddListPlaceholder();
     },
     fadeInBackgroundImg: function(){
-        $('.background-img').animate({opacity: 0}, 0).css({'background-image': 'url(http://i.imgur.com/XEtgQ.jpg)'}).animate({opacity: 1}, 500);
+        $('.background-img').animate({opacity: 0}, 0).css({'background-image': 'url(http://i.imgur.com/XEtgQ.jpg)'}).animate({opacity: 1}, 200);
     },
     form:
     {
@@ -110,19 +110,17 @@ var List =
             {
                 var thisList = $('.list')[i];
 
-                $(thisList).find('.list-title, .card-title, .address, .latlng').on('shown', function(e, reason) {                    
-                    var thisList = $(this).parents('.list'),
-                        inputText = $(this).siblings().find('input'),  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
-                        hasCache = $(this).attr('data-cache');
+                $(thisList).find('.list-title, .card-title, .address, .latlng').on('shown', function(e, reason) {
+                    var thisList = $(this).parents('.list');
+                    var inputText = $(this).siblings().find('input');  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
+                    // hasCacheProperty = $(this).attr('data-cache');
 
-                    $(thisList).find('.in-list').sortable( "disable" );
-                    
-                    if (hasCache) inputText.val( $(this).attr('data-cache') );
-                    inputText.on('keyup mouseup', function(e){ appConfig.inputCache = $(this).val(); });
+                    $(thisList).find('.in-list').sortable( "disable" );                   
+                    // if (hasCacheProperty) inputText.val( $(this).attr('data-cache') );
+                    // inputText.on('keyup mouseup', function(e){ appConfig.inputCache = $(this).val(); });
                 });
 
                 $(thisList).find('.list-title, .card-title, .address, .latlng').on('hidden', function(e, reason) {
-                    console.log(reason);
                     var thisList = $(this).parents('.list');
                     $(thisList).find('.in-list').sortable( "disable" );
 
@@ -131,49 +129,44 @@ var List =
                     else
                         $(thisList).find('.in-list').sortable('enable');
                
-                    if (reason === 'onblur' || reason === 'manual') $(this).attr('data-cache', appConfig.inputCache);
+                    // if (reason === 'onblur' || reason === 'manual'){
+                    //     $(this).attr('data-cache', appConfig.inputCache);
+                    // }
 
-                    if( reason === 'cancel' || reason === 'save') {
-                        appConfig.inputCache = ''; 
-                        $(this).removeAttr('data-cache');
-                    }
-                });             
+                    // if( reason === 'cancel' || reason === 'save') {
+                    //     appConfig.inputCache = ''; 
+                    //     $(this).removeAttr('data-cache');
+                    // }
+                });
             }
         },
         bindNewForm: function(config) //only bind new(latest) list which placeholder was clicked
         {
-            $('.address').editable({
+            config.inList.find('.card').last().find('.address').editable({
                 showbuttons: 'bottom'
             });
-            $('.latlng').editable({
+            config.inList.find('.card').last().find('.latlng').editable({
                 showbuttons: 'bottom'
             });
-            $('.card-title').editable({
+            config.inList.find('.card').last().find('.card-title').editable({
                 showbuttons: 'bottom'
             });
-            $('.list-title').editable({
-                showbuttons: 'right',
-                url: '/post',    
-                pk: 1,    
-                title: 'Enter username',
-                ajaxOptions: {
-                    type: 'put'
-                } 
+            config.inList.find('.card').last().find('.list-title').editable({
+                showbuttons: 'bottom'
             });
 
-            config.inList.find('.card-title, .address, .latlng').on('shown', function(e, reason) {
-                var thisList = $(this).parents('.in-list'),
-                    inputText = $(this).siblings().find('input'),  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
-                    hasCache = $(this).attr('data-cache');
+            config.inList.find('.card').last().find('.card-title, .address, .latlng').on('shown', function(e, reason) {
+                var thisList = $(this).parents('.list');
+                var inputText = $(this).siblings().find('input');  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
+                    // hasCacheProperty = $(this).attr('data-cache');
 
-                thisList.sortable("disable");
-                if (hasCache) inputText.val($(this).attr('data-cache'));
-                inputText.on('keyup mouseup', function(e){ 
-                    appConfig.inputCache = $(this).val(); 
-                });
+                thisList.find('.in-list').sortable("disable");
+
+                // if (hasCacheProperty) inputText.val( $(this).attr('data-cache') );
+                // inputText.on('keyup mouseup', function(e){ appConfig.inputCache = $(this).val(); });
             });
 
-            config.inList.find('.card-title, .address, .latlng').on('hidden', function(e, reason) {
+            config.inList.find('.card').last().find('.card-title, .address, .latlng').on('hidden', function(e, reason) {
                 var thisList = $(this).parents('.list');
                 $(thisList).find('.in-list').sortable( "disable" );
 
@@ -182,54 +175,16 @@ var List =
                 else
                     thisList.find('.in-list').sortable('enable');
 
-                if (reason === 'onblur' || reason === 'manual') {
-                    $(e.currentTarget).attr('data-cache', appConfig.inputCache);
-                }
+                // if (reason === 'onblur' || reason === 'manual') {
+                //     if (appConfig.lastInputElement === this) $(this).attr('data-cache', appConfig.inputCache);
+                // }
             
-                if( reason === 'cancel' || reason === 'save') { 
-                    appConfig.inputCache = ''; 
-                    $(this).removeAttr('data-cache');
-                }
+                // if( reason === 'cancel' || reason === 'save') { 
+                //     appConfig.inputCache = ''; 
+                //     $(this).removeAttr('data-cache');
+                // }
             });
-            config = '';
         }
-    },
-    bindForm: function() //bind all in once
-    {
-        $('.address').editable({
-            showbuttons: 'bottom'
-        });
-        $('.latlng').editable({
-            showbuttons: 'bottom'
-        });
-        $('.card-title').editable({
-            showbuttons: 'bottom'
-        });
-        $('.list-title').editable({
-            showbuttons: 'right'
-        });
-        
-        $('.list-title, .card-title, .address, .latlng').on('shown', function(e, reason) {
-            $('.in-list').sortable( "disable" );
-            var inputText = $(this).siblings().find('input');  //  find x-editable form after shown event, $(this) == $(e.currentTarget).siblings()... 
-            var hasCache = $(this).attr('data-cache');
-            if (hasCache) inputText.val($(this).attr('data-cache'));
-            inputText.on('keyup mouseup', function(e){ appConfig.inputCache = $(this).val(); });
-        });
-        
-        $('.list-title, .card-title, .address, .latlng').on('hidden', function(e, reason) {
-            if ($('.card-content td').hasClass('editable-open'))
-                $('.in-list').sortable('disable');
-            else
-                $('.in-list').sortable('enable');
-            
-            if (reason === 'onblur' || reason === 'manual') $(this).attr('data-cache', appConfig.inputCache);       
-            
-            if( reason === 'cancel' || reason === 'save') { 
-                appConfig.inputCache = ''; 
-                $(this).removeAttr('data-cache');
-            }
-        });
     },
     list:
     {
@@ -244,7 +199,6 @@ var List =
             $(appConfig.zone).append(appConfig.listDom);
             List.card.bindCardSortable();
             List.setListBoxMaxHeight();
-            List.form.bindNewForm(lastListObj);
         },
         appendByPlaceholder: function(listPlaceholderPos){
             List.adjustBodyWidth(appConfig.adjustBodyOffset);        
@@ -256,7 +210,6 @@ var List =
                 inList: lastInList
             };
             List.card.bindCardSortable();
-            List.form.bindNewForm(lastListObj);
             List.setListBoxMaxHeight();
             List.list.injectListPlaceholder();            
         },        
@@ -291,14 +244,13 @@ var List =
     card: 
     {
         add: function(addCardElement){
-            var thisInList = addCardElement.parent().find('.in-list').prepend(appConfig.cardDom);
-            // var currentList = $(this).parent().find('.list').prepend(appConfig.cardDom);
+            var thisInList = addCardElement.parent().find('.in-list');
+            thisInList.find('.block').before(appConfig.cardDom);
             List.card.decoCard({
                 newCard: 'TRUE',
                 whichInlist: thisInList //current .in-list
             });
-            List.form.bindNewForm({ inList: thisInList });
-            // List.form.bindForm();            
+            List.form.bindNewForm({ inList: thisInList });           
         },        
         bindCardSortable: function()
         {
@@ -341,7 +293,7 @@ var List =
             });
         },
         decoNewCard: function(inList) {
-            inList.find(".card").first().addClass("ui-widget ui-widget-content ui-helper-clearfix ui-corner-all")
+            inList.find(".card").last().addClass("ui-widget ui-widget-content ui-helper-clearfix ui-corner-all")
                 .find(".card-header")
                 .addClass("ui-widget-header ui-corner-all")
                 .prepend("<span class='ui-icon ui-icon-minusthick'></span>")
@@ -359,6 +311,7 @@ var List =
 
 $(function() {
     $.fn.editable.defaults.mode = 'inline';
+    List.fadeInBackgroundImg();
     List.card.decoCard({ newCard: 'FALSE' });
     List.form.firstTimeBind();
     List.list.bindListSortable();
@@ -383,14 +336,4 @@ $(function() {
     $(window).resize(function() { 
         List.setListBoxMaxHeight(); 
     });
-
-    //ajax emulation
-    $.mockjax({
-        url: '/post',
-        responseTime: 200,
-        response: function(settings) {
-            console.log(settings);
-        }
-    });
-
 });

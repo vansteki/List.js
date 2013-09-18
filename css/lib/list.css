@@ -28,7 +28,7 @@ body{
     cursor: -webkit-grabbing; cursor: -moz-grabbing;
 }
 
-.block{
+.in-list .block{
     width: 10px;
     margin-bottom: 20px;
 }
