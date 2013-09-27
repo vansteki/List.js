@@ -7,6 +7,7 @@ var appConfig = {
     adjustBodyOffset: 340,
     cardPlaceholderWidth: 300,
     maxList: 2,
+    enableXeditableRequest: true,
     listPlaceholder:
         "<div class='add-list-placeholder'>" +
             "<div class='add-list'>" +
@@ -42,11 +43,11 @@ var appConfig = {
                     "<tbody>" + 
                     "<tr>" + 
                         "<td>" + "地址 </td>" + 
-                        "<td class='address'>" + "THU</td>" + 
+                        "<td class='address'>" + "</td>" + 
                     "</tr>" + 
                     "<tr>" + 
                         "<td>" + "經緯度 </td>" + 
-                        "<td class='latlng'>" + "123321, 1234567</td>" + 
+                        "<td class='latlng'>" + "</td>" + 
                     "</tr>" + 
                 "</tbody>" + 
                 "</table>" + 
@@ -67,7 +68,11 @@ var List =
     },
     iniBodyWidth: function(){
         var listWidth = $('.list')[0].offsetWidth || appConfig.listWidth;
-        var listPlaceholderWidth = $('.add-list-placeholder')[0].offsetWidth || appConfig.placeholderWidth;
+        var listPlaceholderWidth = function(){
+            var CurrentPlaceholderWidth = $('.add-list-placeholder')[0].offsetWidth;
+            var width = ( CurrentPlaceholderWidth === 'undefined' ? appConfig.placeholderWidth : CurrentPlaceholderWidth );  
+            return width;
+        };
         var listCount = ( $('.list').length === 0 ? 1 : $('.list').length );
         var totalListsWidth = listWidth * listCount;
         if( totalListsWidth + listPlaceholderWidth + 10 > document.body.clientWidth)
@@ -129,20 +134,18 @@ var List =
                 });
             }
         },
-        bindNewForm: function(config) //only bind new(latest) list which placeholder was clicked
+        bindNewCardForm: function(config) //only bind new(latest) list which placeholder was clicked
         {
             config.inList.find('.card').last().find('.address').editable({
                 showbuttons: 'bottom'
             });
             config.inList.find('.card').last().find('.latlng').editable({
                 showbuttons: 'bottom'
-            });
+            }); 
             config.inList.find('.card').last().find('.card-title').editable({
                 showbuttons: 'bottom'
             });
-            config.inList.find('.card').last().find('.list-title').editable({
-                showbuttons: 'bottom'
-            });
+
 
             config.inList.find('.card').last().find('.card-title, .address, .latlng').on('shown', function(e, reason) {
                 var thisList = $(this).parents('.list');
@@ -160,34 +163,50 @@ var List =
                 else
                     thisList.find('.in-list').sortable('enable');
             });
-        }
+        },
+        bindNewListForm: function(config)
+        {
+            config.list.find('.list-title').editable({                
+                url: api + 'demo',
+                ajaxOptions: {
+                    type: 'put',
+                    dataType: 'json'
+                },
+                send: 'always',
+                params:{
+                    'sampledata': 'yooooo'
+                },
+                showbuttons: 'bottom'
+            });            
+        },
     },
     list:
     {
         appendByButton: function() {
-            var lastList = $(appConfig.zone).find('.list').last(); console.log(lastList);
-            var lastInList = $(lastList).find('in-list');
-            var lastListObj = {
-                list: lastList,
-                inList: lastInList
-            };            
             $(appConfig.zone).append(appConfig.listDom);
-            List.card.bindCardSortable();
+            var lastList = $(appConfig.zone).find('.list').last();
+            var lastInList = $(lastList).find('in-list');
+            var lastListObj = { list: lastList, inList: lastInList };            
+
             List.setListBoxMaxHeight();
+            List.form.bindNewListForm(lastListObj);
+            List.card.bindCardSortable();
             List.adjustBodyWidth(appConfig.adjustBodyOffset);
         },
         appendByPlaceholder: function(listPlaceholderPos){
             listPlaceholderPos.replaceWith(appConfig.listDom);
-            var lastList = $(appConfig.zone).find('.list').last(); console.log(lastList);
+            var lastList = $(appConfig.zone).find('.list').last();
             var lastInList = $(lastList).find('in-list');
-            var lastListObj = {
-                list: lastList,
-                inList: lastInList
-            };
-            List.card.bindCardSortable();
+            var lastListObj = { list: lastList, inList: lastInList };
+            
             List.setListBoxMaxHeight();
+            List.form.bindNewListForm(lastListObj);
+            List.card.bindCardSortable();
             List.list.injectListPlaceholder();            
-            List.adjustBodyWidth(appConfig.adjustBodyOffset);        
+            List.adjustBodyWidth(appConfig.adjustBodyOffset);
+        },appendByLoading: function()
+        {
+            var lastList = $(appConfig.zone).find('.list').last();            
         },        
         bindListSortable: function()
         {
@@ -219,14 +238,15 @@ var List =
     },
     card: 
     {
-        add: function(addCardElement){
+        add: function(addCardElement)
+        {
             var thisInList = addCardElement.parent().find('.in-list');
             thisInList.find('.block').before(appConfig.cardDom);
             List.card.decoCard({
                 newCard: 'TRUE',
                 whichInlist: thisInList //current .in-list
             });
-            List.form.bindNewForm({ inList: thisInList });           
+            List.form.bindNewCardForm({ inList: thisInList });           
         },        
         bindCardSortable: function()
         {
@@ -242,7 +262,7 @@ var List =
                     $('.card').css('cursor', 'pointer');
                     $(ui.item.context).removeClass('card-skew');
                     var thisInList = $(ui.item.context).parents('.in-list');
-                    List.form.bindNewForm({ inList: thisInList });
+                    List.form.bindNewCardForm({ inList: thisInList });
                 }
             });
         },        
@@ -284,8 +304,9 @@ var List =
     },
     data:
     {
-        fetchPlanData: function() {
-           try{ 
+        getPlanItems: function()
+        {
+           try { 
                 $.getJSON( api + 'dogman/plans/1/all', function( data ) {             
                     localStorage.tmpPlanData = JSON.stringify(data['items']);
                     console.log('fetching data result:');
@@ -295,14 +316,16 @@ var List =
                 });
                 var result = JSON.parse(localStorage.tmpPlanData); localStorage.tmpPlanData = '';
                 return result;
-            }catch( err ) {
-              console.log('fetching plandata faild');
+            }catch( err ){
+                console.log('fetching plandata faild');
             }
         }
     }
 };
 
 $(function() {
+    var planData = List.data.getPlanItems();
+
     $.fn.editable.defaults.mode = 'inline'; 
     List.fadeInBackgroundImg();
     List.form.firstTimeBind();
@@ -310,10 +333,9 @@ $(function() {
     List.card.bindCardSortable();
     List.card.decoCard({ newCard: 'FALSE' });
     List.setListBoxMaxHeight();
-    List.list.injectListPlaceholder();
+    // List.list.injectListPlaceholder();
     List.iniBodyWidth();
     
-    var planData = List.data.fetchPlanData();
 
     //main events handler
     $('body').delegate('#add-list-btn', 'click', function() { List.list.appendByButton(); });
