@@ -1,16 +1,16 @@
-var api = '';
-var userModel = {
-    userName: 'dogman' //@@ get from DOM model
+var Api = 'http://140.128.198.44:409/';
+var User = {
+    name: 'dogman' //@@ get from DOM model
 };
-var appConfig = {
+var Model = {};
+var AppConfig = {
     zone: '#zone',
     card: '.card',
     listWidth: 400,
     placeholderWidth: 314,
-    adjustBodyOffset: 340,
-    cardPlaceholderWidth: 300,
+    adjustBodyOffset: 400,
+    cardPlaceholderWidth: 400,
     maxList: 2,
-    enableXeditableRequest: true,
     listPlaceholder:
         "<div class='add-list-placeholder'>" +
             "<div class='add-list'>" +
@@ -112,14 +112,14 @@ var List =
         {
 
         },
-        bindOldCardForm: function()
+        bindNewCardForm: function()
         {
 
         },
-        bindNewCardForm: function(config) //only bind new(latest) list which card is last
+        bindAddedCardForm: function(config) //only bind new(latest) list which card is last
         {
             config.inList.find('.card').last().find('.info-content').editable({
-                showbuttons: 'bottom'
+                  showbuttons: 'bottom'
             });
             config.inList.find('.card').last().find('.latlng').editable({
                 showbuttons: 'bottom'
@@ -146,19 +146,16 @@ var List =
                     thisList.find('.in-list').sortable('enable');
             });
         },
-        bindNewListForm: function(config)
+        bindNewListForm: function(config, planId)
         {
-            planItemModel = List.model.get('plan' + config.planId + '.items');
-            planItemModel.meta = 'XD'
             config.list.find('.list-title').editable({                
-                url: api + 'demo',
+                url: Api + 'demo',
                 ajaxOptions: {
-                    type: 'put',
+                    tUpe: 'put',
                     dataType: 'json'
                 },
                 send: 'always',
                 params:{
-                    meta: planItemModel.meta,
                     'sampledata': 'yooooo'
                 },
                 showbuttons: 'bottom'
@@ -169,36 +166,38 @@ var List =
     {
         appendByButton: function(planId) 
         {
-            $(appConfig.zone).append(appConfig.listDom);
-            var lastList = $(appConfig.zone).find('.list').last();
+            $(AppConfig.zone).append(AppConfig.listDom);
+            var lastList = $(AppConfig.zone).find('.list').last();
             var lastInList = $(lastList).find('in-list');
             var lastListObj = { list: lastList, inList: lastInList, planId: planId };            
 
-            List.form.bindNewListForm(lastListObj);
-            List.card.bindCardSortable();
-            List.uipatch.setListBoxMaxHeight();
-            List.uipatch.adjustBodyWidth(appConfig.adjustBodyOffset);
+            // List.form.bindNewListForm(lastListObj);
+            // List.card.bindCardSortable();
+            // List.uipatch.setListBoxMaxHeight();
+            // List.uipatch.adjustBodyWidth(AppConfig.adjustBodyOffset);
         },
         appendByPlaceholder: function(listPlaceholderPos, planId){
-            listPlaceholderPos.replaceWith(appConfig.listDom);
-            var lastList = $(appConfig.zone).find('.list').last();
+            listPlaceholderPos.replaceWith(AppConfig.listDom);
+            var lastList = $(AppConfig.zone).find('.list').last();
             var lastInList = $(lastList).find('in-list');
             var lastListObj = { list: lastList, inList: lastInList, planId: planId };
             
-            List.form.bindNewListForm(lastListObj);
-            List.form.bindNewCardForm({ inList: thisInList });
-            List.card.bindCardSortable();
-            List.list.injectListPlaceholder();            
-            List.uipatch.setListBoxMaxHeight();
-            List.uipatch.adjustBodyWidth(appConfig.adjustBodyOffset);
+            // List.form.bindNewListForm(lastListObj);
+            // // List.form.bindAddedCardForm({ inList: thisInList });
+            // List.form.bindAll();
+            // List.card.bindCardSortable();
+            // List.list.injectListPlaceholder();            
+            // List.uipatch.setListBoxMaxHeight();
+            // List.uipatch.adjustBodyWidth(AppConfig.adjustBodyOffset);
         },
         appendByLoading: function(planId)
         {            
+            console.log('ck when call appendbyLoading',Model);
             //render and inject list
-            $(appConfig.zone).append(this.renderNewList(planId));
+            $(AppConfig.zone).append(this.renderNewList(planId));
 
             var cardViews = this.renderNewItems(planId);
-            var lastList = $(appConfig.zone).find('.list').last();
+            var lastList = $(AppConfig.zone).find('.list').last();
             var lastInList = lastList.find('.in-list');
             var lastListObj = { list: lastList, inList: lastInList, planId: planId };
 
@@ -208,20 +207,19 @@ var List =
             List.list.bindListSortable();
             List.card.bindCardSortable();
             List.card.decoCard({ addedCard: 'FALSE', list: lastList });
-            List.form.bindNewListForm(lastListObj);
+            // List.form.bindNewListForm(l  tListObj, planId);
             //binde old card
-            List.form.bindAll(); //testing
+            List.form.bindAll(); //testing 
 
             List.uipatch.applyNewListWidth();
             List.uipatch.adjustCardColWidth();
             List.uipatch.setListBoxMaxHeight();
-            List.uipatch.iniBodyWidth();
-            List.uipatch.adjustBodyWidth(appConfig.adjustBodyOffset);
+            List.uipatch.adjustBodyWidth(AppConfig.adjustBodyOffset);
         },
         renderNewList: function(planId)
         {
             var listTemp = 
-                "<div class='list'>" + 
+                            "<div class='list'>" + 
                     "<div class='list-title-banner'>" + 
                         "<span class='list-title'>" + 'new list' + "</span>" +  //@@ should put plan's title
                     "</div>" + 
@@ -236,8 +234,9 @@ var List =
         },
         renderNewItems: function(planId)
         {
-            console.log('begin card render fomr model', List.model.get('plan' + planId + '.items'));
-            var planItemModel = List.model.get('plan' + planId + '.items');  
+            console.log('check model before render items');
+            console.dir( Model );
+            planItemModel = '';            
             var cardViews = [];
             cardViews = _.map(planItemModel, function(item){
                 var view =
@@ -273,7 +272,7 @@ var List =
         },
         bindListSortable: function()
         {
-            $(appConfig.zone).sortable({
+            $(AppConfig.zone).sortable({
                 sort: function(event, ui) {
                     $('.ui-sortable-placeholder').css('height', ui.item.context.offsetHeight);
                     $(ui.item.context).addClass('list-skew')
@@ -285,17 +284,17 @@ var List =
             });
         },
         injectListPlaceholder: function() {
-            $(appConfig.zone).append(appConfig.listPlaceholder);
+            $(AppConfig.zone).append(AppConfig.listPlaceholder);
             //listplaceholder events handler
-            $(appConfig.zone).delegate('.add-list-placeholder', 'mouseover', function() {
-                $(appConfig.zone).sortable('disable');
+            $(AppConfig.zone).delegate('.add-list-placeholder', 'mouseover', function() {
+                $(AppConfig.zone).sortable('disable');
                 List.uipatch.rePosAddListPlaceholder(); //move listplaceholder to default position
             });
-            $(appConfig.zone).delegate('.add-list-placeholder', 'mouseout', function() { 
-                $(appConfig.zone).sortable('enable');
+            $(AppConfig.zone).delegate('.add-list-placeholder', 'mouseout', function() { 
+                $(AppConfig.zone).sortable('enable');
             });
-            $(appConfig.zone).delegate('.add-list-placeholder', 'click', function() { 
-                $(appConfig.zone).sortable('enable');
+            $(AppConfig.zone).delegate('.add-list-placeholder', 'click', function() { 
+                $(AppConfig.zone).sortable('enable');
             });
         }
     },
@@ -304,12 +303,13 @@ var List =
         add: function(addCardElement)
         {
             var thisInList = addCardElement.parent().find('.in-list');
-            thisInList.find('.block').before(appConfig.cardDom);
+            thisInList.find('.block').before(AppConfig.cardDom);
             List.card.decoCard({
                 addedCard: 'TRUE',
                 whichInlist: thisInList //current .in-list
             });
-            List.form.bindNewCardForm({ inList: thisInList });           
+            // List.form.bindAddedCardForm({ inList: thisInList });  //testing
+            List.form.bindAll();          
         },        
         bindCardSortable: function()
         {
@@ -325,7 +325,7 @@ var List =
                     $('.card').css('cursor', 'pointer');
                     $(ui.item.context).removeClass('card-skew');
                     var thisInList = $(ui.item.context).parents('.in-list');
-                    // List.form.bindNewCardForm({ inList: thisInList }); //testing
+                    // List.form.bindAddedCardForm({ inList: thisInList }); //testing
                     List.form.bindAll();
                 }
             });
@@ -372,9 +372,10 @@ var List =
         adjustBodyWidth: function(nPixels) 
         {
             if (document.body.style.width === '') {
-                $('body').css('width', document.body.clientWidth + 0); //document.body.style.width === will be set to 0 not ''
+                $('body').width(document.body.clientWidth + 0); //document.body.style.width === will be set to 0 not ''
             }else{
-                $('body').css('width', parseInt($('body').css('width'), 10) + nPixels);
+                console.log('2');
+                if(this.isZoneOverFlow) $('body').width( parseInt($('body').width(), 10) + nPixels); //right + left margins = 20
             }
             console.log($('body').css('width'));
         },
@@ -382,20 +383,34 @@ var List =
         {
             $('.list td#item-col').width('64');
         },
+        isZoneOverFlow: function()
+        {
+            var arrWidth = _.map( $(AppConfig.zone).children(), function(c){ return $(c).width() });
+            var sum = _.reduce(arrWidth, function(memo, num){ return memo + num; }, 0);
+            var totalZoneElWidth = sum + (arrWidth.length * 20); console.log(totalZoneElWidth);
+                if ( totalZoneElWidth > parseInt(localStorage.clientWidth, 10) )
+                    return true;
+                else
+                    return false;
+
+            // var el = $(AppConfig.zone).children(), sum = 0;
+            // for (i = 0; i <= el.size(); i++){ sum += $(el[i]).width(); } console.log(sum + (el.size() * 20) );
+        },
         iniBodyWidth: function(){
-            var listWidth = $('.list')[0].offsetWidth || appConfig.listWidth;
+            var listWidth = AppConfig.listWidth || $('.list')[0].offsetWidth;
             var listPlaceholderWidth = function() {
                 var CurrentPlaceholderWidth = $('.add-list-placeholder')[0].offsetWidth;
-                var width = ( CurrentPlaceholderWidth === 'undefined' ? appConfig.placeholderWidth : CurrentPlaceholderWidth );  
+                var width = ( CurrentPlaceholderWidth === 'undefined' ? AppConfig.placeholderWidth : CurrentPlaceholderWidth );  
                 return width;
             };
             var listCount = ( $('.list').length === 0 ? 1 : $('.list').length );
             var totalListsWidth = listWidth * listCount;
             if( totalListsWidth + listPlaceholderWidth + 10 > document.body.clientWidth)
-                $('body').css('width', parseInt($('body').css('width'), 10) + document.body.clientWidth - totalListsWidth);
+                $('body').css('width', parseInt($('body').css('width'), 10) + (document.body.clientWidth - totalListsWidth) );
         },
         setListBoxMaxHeight: function()
         {
+            return; // testing
             //when to show scrollbar
             // $('.list-box').css('max-height', document.body.scrollHeight - 150);
             var offSet = ( $('.list').position().top + $('.list-box').position().top ) * 2;
@@ -404,48 +419,52 @@ var List =
         rePosAddListPlaceholder: function()
         {
             var nextElementCount = $('.add-list-placeholder').next().siblings().length;                
-            if (nextElementCount >= 1) $(appConfig.zone).append($('.add-list-placeholder')); //move listplaceholder to default position
+            if (nextElementCount >= 1) $(AppConfig.zone).append($('.add-list-placeholder')); //move listplaceholder to default position
         },
         applyNewListWidth: function()
         {
-            if (appConfig.listWidth) { $('.list').width(appConfig.listWidth); }
+            if (AppConfig.listWidth) { $('.list').width(AppConfig.listWidth); }
         },
         fadeInBackgroundImg: function()
         {
             $('.background-img').animate({opacity: 0}, 0).css({'background-image': 'url(http://i.imgur.com/XEtgQ.jpg)'}).animate({opacity: 1}, 500);
         }
     },    
-    model:
+    data:
     {
-        getPlan: function(userName){
-            var userName = (userName === 'undefined' ? userModel.userName : 'dogman'); //test
-            var url = api + userModel.userName + '/plans/';
-            try {
-                $.getJSON( url, function( data ) {
-                    localStorage[userName + '.plans'] = JSON.stringify(data);
-                    console.log('fetching plan info result:');
-                    $.each( data, function( key, val ) { console.log(key, val); });
-                });
-            }catch( err ){ console.log('fetching plan info faild'); }        
+        getPlan: function(userName, model)
+        {
+            var userName = (userName === 'undefined' ? User.name : 'dogman'); //@@ test
+            $.getJSON( Api + User.name + '/plans/' )
+            .done(function(data) {
+                $.each(data, function(key, val ) { console.log(key, val); });
+                localStorage[userName + '.plans'] = JSON.stringify(data);
+            })
+            .fail(function() {
+                console.log('fetch plan info faild');
+            });
         },
-        getPlanItems: function(planId)
-        {            
-            var url = api + userModel.userName +'/plans/' + planId +'/all'
-            try {
-                $.getJSON( url , function( data ) {
-                    localStorage['plan' + planId + '.items'] = JSON.stringify(data['items']);
-                    localStorage['plan' + planId + '.shareitems'] = JSON.stringify(data['shareitems']);
-                    console.log('fetching data result:');
-                    $.each( data['items'], function( key, val ) { console.log(key, val); });                    
-                });
-            }catch( err ){ console.log('fetching plandata faild'); }
+        getPlanData: function(planId) {
+            var url = Api + User.name +'/plans/' + planId + '/all';
+            return $.ajax({
+                type: "GET",
+                url: url,
+                async: false,
+                success: function(data){
+                    $.each( data['items'], function( key, val ) { console.log(key, val); });
+                    localStorage.setItem('plan' + planId + '.items', JSON.stringify(data['items']) );
+                },
+                dataType: 'json'
+            });
         },
-        store: function(model, name) { localStorage[name] = JSON.stringify(model); }
-        , 
-        get: function(name) { return JSON.parse(localStorage[name]); } //plan[n].[group] ex: plan1.items
-        ,
-        remove: function(obj , config){ //remove(obj, {id:127})
+        remove: function(obj , config){             //remove(obj, {id:127})
             return _.without(obj, _.findWhere(obj, config));
+        },
+        dataReady: function(planId){
+            var result = JSON.parse(localStorage.tmpPlanData);
+            Model = result;
+            console.log(result);
+            List.list.appendByLoading(planId); 
         }
     }
 };
@@ -453,20 +472,27 @@ var List =
 var initialize = function(){
     $.fn.editable.defaults.mode = 'inline';
     List.uipatch.fadeInBackgroundImg();
+    localStorage.clientWidth = document.body.clientWidth;
+    // Model[User.name] = {};
 };
 
 $(function() {
     initialize();
 
-    var planId = 1;                         //@@should get form jquery or other model
-    List.model.getPlanItems(planId);        //get data
-    List.list.appendByLoading(planId);      //render and inject list&cards
+    var planId = 1;  //@@should get form jquery or other model
+    // console.log(List.data.fetchPlanData(planId).responseJSON);
+    Model['plan' + planId] = { items: List.data.getPlanData(planId).responseJSON.items }; console.log('M: ',Model);
+
+    // List.list.appendByLoading(planId);      //render and inject list&cards
                                             //deco/bind/patch
     //main events handler
     //$('body').delegate('#add-list-btn', 'click', function() { List.list.appendByButton(planId); });
-    //$(appConfig.zone).delegate('.add-list-placeholder', 'click', function() { List.list.appendByPlaceholder($(this), planId); });
-    $(appConfig.zone).delegate('#add-card', 'click', function() { List.card.add($(this)); });
-    $(appConfig.zone).delegate('#add-card', 'mouseover', function(){ $(appConfig.zone).sortable('disable'); });
-    $(appConfig.zone).delegate('#add-card', 'mouseout', function(){ $(appConfig.zone).sortable('enable'); });
+    //$(AppConfig.zone).delegate('.add-list-placeholder', 'click', function() { List.list.appendByPlaceholder($(this), planId); });
+    $(AppConfig.zone).delegate('#add-card', 'click', function() { List.card.add($(this)); });
+    $(AppConfig.zone).delegate('#add-card', 'mouseover', function(){ $(AppConfig.zone).sortable('disable'); });
+    $(AppConfig.zone).delegate('#add-card', 'mouseout', function(){ $(AppConfig.zone).sortable('enable'); });
     $(window).resize(function() { List.uipatch.setListBoxMaxHeight(); });
+    $( window ).unload(function() {
+        localStorage.clear();
+    });
 });
