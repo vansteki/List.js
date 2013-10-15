@@ -1,4 +1,4 @@
-var Api = 'http://140.128.198.44:409/';
+var Api = '';
 var User = {
     name: 'dogman' //@@ get from DOM model
 };
