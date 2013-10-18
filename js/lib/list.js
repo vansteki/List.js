@@ -2,7 +2,8 @@ var Api = '';
 var User = {
     name: 'dogman' //@@ get from DOM model
 };
-var Model = {};
+var Models = {};
+
 var AppConfig = {
     zone: '#zone',
     card: '.card',
@@ -192,7 +193,7 @@ var List =
         },
         appendByLoading: function(planId)
         {            
-            console.log('ck when call appendbyLoading',Model);
+            console.log('ck when call appendbyLoading',Models);
             //render and inject list
             $(AppConfig.zone).append(this.renderNewList(planId));
 
@@ -219,7 +220,7 @@ var List =
         renderNewList: function(planId)
         {
             var listTemp = 
-                            "<div class='list'>" + 
+                "<div class='list'>" + 
                     "<div class='list-title-banner'>" + 
                         "<span class='list-title'>" + 'new list' + "</span>" +  //@@ should put plan's title
                     "</div>" + 
@@ -234,9 +235,9 @@ var List =
         },
         renderNewItems: function(planId)
         {
-            console.log('check model before render items');
-            console.dir( Model );
-            planItemModel = '';            
+            console.log('check Models before render items');
+            console.dir( Models );
+            planItemModel = Models['plan' + planId].items;            
             var cardViews = [];
             cardViews = _.map(planItemModel, function(item){
                 var view =
@@ -272,16 +273,21 @@ var List =
         },
         bindListSortable: function()
         {
+            $(AppConfig.zone).on('mouseenter', '.list-title-banner', this.sortableState );
+            $(AppConfig.zone).on('mouseleave', '.list-title-banner', function(){ $(AppConfig.zone).sortable('disable'); } );
+        },
+        sortableState: function(){
             $(AppConfig.zone).sortable({
-                sort: function(event, ui) {
-                    $('.ui-sortable-placeholder').css('height', ui.item.context.offsetHeight);
-                    $(ui.item.context).addClass('list-skew')
-                },
-                stop: function(event, ui) {
-                    $(ui.item.context).removeClass('list-skew');
-                    List.uipatch.rePosAddListPlaceholder();
-                }
-            });
+                    sort: function(event, ui) {
+                        $('.ui-sortable-placeholder').css('height', ui.item.context.offsetHeight);
+                        $(ui.item.context).addClass('list-sorting-skew list-sorting-shadow');
+                    },
+                    stop: function(event, ui) {
+                        $(ui.item.context).removeClass('list-sorting-skew list-sorting-shadow');
+                        // List.uipatch.rePosAddListPlaceholder();
+                        $(AppConfig.zone).on('mouseover', '.list-title-banner', function(){ $(AppConfig.zone).sortable('enable'); } );
+                    }
+            });            
         },
         injectListPlaceholder: function() {
             $(AppConfig.zone).append(AppConfig.listPlaceholder);
@@ -392,7 +398,6 @@ var List =
                     return true;
                 else
                     return false;
-
             // var el = $(AppConfig.zone).children(), sum = 0;
             // for (i = 0; i <= el.size(); i++){ sum += $(el[i]).width(); } console.log(sum + (el.size() * 20) );
         },
@@ -408,13 +413,12 @@ var List =
             if( totalListsWidth + listPlaceholderWidth + 10 > document.body.clientWidth)
                 $('body').css('width', parseInt($('body').css('width'), 10) + (document.body.clientWidth - totalListsWidth) );
         },
-        setListBoxMaxHeight: function()
+        setListBoxMaxHeight: function() //when to show scrollbar
         {
-            return; // testing
-            //when to show scrollbar
-            // $('.list-box').css('max-height', document.body.scrollHeight - 150);
-            var offSet = ( $('.list').position().top + $('.list-box').position().top ) * 2;
-            $('.list-box').css('max-height', document.documentElement.clientHeight - offSet);
+            var list = $('.list'), listBox = $('.list-box');
+            if (! list ) return ;
+            var offSet = ( ( list.length === 0 ? 0 : listBox.position().top ) + listBox.position().top ) * 2
+            listBox.css('max-height', document.documentElement.clientHeight - offSet);
         },
         rePosAddListPlaceholder: function()
         {
@@ -432,32 +436,7 @@ var List =
     },    
     data:
     {
-        getPlan: function(userName, model)
-        {
-            var userName = (userName === 'undefined' ? User.name : 'dogman'); //@@ test
-            $.getJSON( Api + User.name + '/plans/' )
-            .done(function(data) {
-                $.each(data, function(key, val ) { console.log(key, val); });
-                localStorage[userName + '.plans'] = JSON.stringify(data);
-            })
-            .fail(function() {
-                console.log('fetch plan info faild');
-            });
-        },
-        getPlanData: function(planId) {
-            var url = Api + User.name +'/plans/' + planId + '/all';
-            return $.ajax({
-                type: "GET",
-                url: url,
-                async: false,
-                success: function(data){
-                    $.each( data['items'], function( key, val ) { console.log(key, val); });
-                    localStorage.setItem('plan' + planId + '.items', JSON.stringify(data['items']) );
-                },
-                dataType: 'json'
-            });
-        },
-        remove: function(obj , config){             //remove(obj, {id:127})
+        remove: function(obj , config){ //remove(obj, {id:127})
             return _.without(obj, _.findWhere(obj, config));
         },
         dataReady: function(planId){
@@ -466,6 +445,53 @@ var List =
             console.log(result);
             List.list.appendByLoading(planId); 
         }
+    }
+};
+
+function pi(){
+    var planitem = this;
+    var models = {};
+
+    this.model = function(){ return planitem.models;};
+    this.fetch = function(){
+        var url = Api + User.name +'/plans/' + 1 + '/all';
+        $.when( $.getJSON(url, function(res){}) ).then(function(res){
+            planitem.saveModel(res);
+        });
+
+    };
+    this.saveModel = function(res){
+        planitem.models = res;
+    }
+    this.fetch();
+}
+
+Plan = 
+{
+    fetch: function(userName){
+       var userName = (userName === 'undefined' ? User.name : 'dogman'); //@@ test
+        return $.getJSON( Api + User.name + '/plans/', function(data){
+            // $.each(data, function(key, val ) { console.log(key, val); });
+            localStorage[userName + '.plans'] = JSON.stringify(data);            
+        })
+        .fail(function() {
+            console.log('fetch plan info faild');
+        });
+    }
+};
+
+
+PlanItem =
+{       
+    fetch: function(planId) {        
+        var promise = $.Deferred();
+        var url = Api + User.name +'/plans/' + planId + '/all';
+        $.getJSON(url, function(res){
+            promise.resolve(res);
+        }).fail(function(){
+            console.log('fetch plan faild');
+        });
+        return promise;
     }
 };
 
@@ -480,19 +506,34 @@ $(function() {
     initialize();
 
     var planId = 1;  //@@should get form jquery or other model
-    // console.log(List.data.fetchPlanData(planId).responseJSON);
-    Model['plan' + planId] = { items: List.data.getPlanData(planId).responseJSON.items }; console.log('M: ',Model);
 
-    // List.list.appendByLoading(planId);      //render and inject list&cards
-                                            //deco/bind/patch
+    // $.when( //single plan way
+    //     Plan.fetch(),
+    //     PlanItem.fetch(planId)
+    // ).then(function(planRes, itemRes){
+    //     Models['plans'] = planRes;
+    //     Models['plan' + planId] = itemRes;
+    //     List.list.appendByLoading(planId);
+    // });
+
+    var plans = Plan.fetch()     
+    plans.done(function(res) { 
+        Models['plans'] = res;
+        for(i in Models['plans']) {
+            var planId = Models['plans'][i].id;
+            var items = PlanItem.fetch(planId).done(function(res) {
+                Models['plan' + res.plan_id] = res;
+                List.list.appendByLoading( res.plan_id);
+                //show chose list on start
+            });
+        }
+    });
+
+    //deco/bind/patch
     //main events handler
     //$('body').delegate('#add-list-btn', 'click', function() { List.list.appendByButton(planId); });
     //$(AppConfig.zone).delegate('.add-list-placeholder', 'click', function() { List.list.appendByPlaceholder($(this), planId); });
     $(AppConfig.zone).delegate('#add-card', 'click', function() { List.card.add($(this)); });
-    $(AppConfig.zone).delegate('#add-card', 'mouseover', function(){ $(AppConfig.zone).sortable('disable'); });
-    $(AppConfig.zone).delegate('#add-card', 'mouseout', function(){ $(AppConfig.zone).sortable('enable'); });
     $(window).resize(function() { List.uipatch.setListBoxMaxHeight(); });
-    $( window ).unload(function() {
-        localStorage.clear();
-    });
+    $( window ).unload(function() {localStorage.clear(); });
 });

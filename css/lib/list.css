@@ -15,6 +15,14 @@ body{
     right: 0;
     z-index: -100;
 }​
+.chose-plan-list-on-load{
+  position: absolute;
+  width: 30%;
+  left: 50%;
+  top:10%;
+  margin-left: -15%;
+  display: none;
+}
 .point{
     cursor: pointer;
 }
@@ -66,12 +74,17 @@ body{
 {
     width: 200;
 }
-.list-skew {
-transform: skew(-2deg, 2deg) ;
--webkit-transform: skew(-2deg, 2deg) ;
--moz-transform: skew(-2deg, 2deg) ;
--o-transform: skew(-2deg, 2deg) ;
--ms-transform: skew(-2deg, 2deg) ;
+.list-sorting-skew {
+    transform: skew(-5deg, 5deg) ;
+    -webkit-transform: skew(-5deg, 5deg) ;
+    -moz-transform: skew(-5deg, 5deg) ;
+    -o-transform: skew(-5deg, 5deg) ;
+    -ms-transform: skew(-5deg, 5deg) ;
+}
+.list-sorting-shadow{
+    -webkit-box-shadow: 4px 4px 22px -8px rgba(0,0,0,1);
+    -moz-box-shadow: 4px 4px 22px -8px rgba(0,0,0,1);
+    box-shadow: 4px 4px 22px -8px rgba(0,0,0,1);
 }
 .add-list-placeholder{
     border-radius: 3px;
@@ -128,4 +141,4 @@ transform: skew(-6deg, 4deg) ;
     border: 3px dashed #aaa;  
     width: 300px;  
     background: #ccc;  
-}  
+}
