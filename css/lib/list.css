@@ -81,7 +81,7 @@ body{
     -o-transform: skew(-5deg, 5deg) ;
     -ms-transform: skew(-5deg, 5deg) ;
 }
-.list-sorting-shadow{
+.list-sorting-shadow {
     -webkit-box-shadow: 4px 4px 22px -8px rgba(0,0,0,1);
     -moz-box-shadow: 4px 4px 22px -8px rgba(0,0,0,1);
     box-shadow: 4px 4px 22px -8px rgba(0,0,0,1);
