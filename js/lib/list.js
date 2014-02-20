@@ -11,51 +11,11 @@ var AppConfig = {
     cardInfoColWidth: 64,
     maxList: 2,
     bg: 'http://i.imgur.com/XEtgQ.jpg',
-    listPlaceholder:
-        "<div class='add-list-placeholder'>" +
-            "<div class='add-list'>" +
-                'Add a List ...' +
-            '</div>' +
-        '<div>'
-    ,
-    listDom: 
-                "<div class='list'>" + 
-                "<div class='list-title-banner'>" + 
-                "<span class='list-title'>TITLE</span>" + 
-                "</div>" + 
-                "<div class='list-box'>" + 
-                "<div class='in-list clearfix'>" + 
-                "<div class='block'></div>" + 
-                '</div>' + 
-                '</div>' + 
-                "<a id='add-card' href='#'>Add a card…</a>" + 
-                '</div>',
-    cardDom: 
-                "<div class='card'>" + 
-                "<div class='card-header'>" + 
-                "<span class='card-title'>" + 'Feeds</span>' + 
-                '</div>' + 
-                "<div class='card-content'>" + 
-                "<table>" + 
-                "<thead>" + 
-                "<tr>" + 
-                "<th>" + "</th>" + 
-                "<th>" + "</th>" + 
-                "</tr>" + 
-                "</thead>" + 
-                    "<tbody>" + 
-                    "<tr>" + 
-                        "<td>" + "地址 </td>" + 
-                        "<td class='address'>" + "</td>" + 
-                    "</tr>" + 
-                    "<tr>" + 
-                        "<td>" + "經緯度 </td>" + 
-                        "<td class='latlng'>" + "</td>" + 
-                    "</tr>" + 
-                "</tbody>" + 
-                "</table>" + 
-                "</div>" + 
-                "</div>"
+    listPlaceholderTpl: null,
+    listTpl: null,
+    cardTpl: null,
+    nullListTpl: null,
+    nullCardTpl: null,
 };
 
 var List = 
@@ -193,7 +153,7 @@ var List =
     {
         appendByButton: function(planId) 
         {
-            AppConfig.zone.append(AppConfig.listDom);
+            // AppConfig.zone.append(AppConfig.listDom);
             var lastList = AppConfig.zone.find('.list').last();
             var lastInList = $(lastList).find('in-list');
             var lastListObj = { list: lastList, inList: lastInList, planId: planId };            
@@ -219,26 +179,26 @@ var List =
         },
         appendByLoading: function(planId)
         {
-            // console.log('appendByLoading:', AppConfig.zone);
-            console.log('ck when call appendbyLoading', Model);
             //render and inject list
-            AppConfig.zone.append(this.renderNewList( Model.plans.get(planId).toJSON()) );
-
-            var cardViews = this.renderNewItems( Model.plans.get(planId).items.toJSON() );
+            var listView = this.renderNewList(Model.plans.get(planId).toJSON());
+            AppConfig.zone.append(listView);
+            //render cards
+            var cardViews = this.renderNewItems(Model.plans.get(planId).items.toJSON());
             var lastList = AppConfig.zone.find('.list').last();
             var lastInList = lastList.find('.in-list');
             var lastListObj = { list: lastList, inList: lastInList, planId: planId };
-
-            //append list           
+            //append cards to list
             $(lastInList).prepend(cardViews);
-            //deco/patch and bind:
+
+            //deco and bind
             List.list.bindListSortable();
             List.card.bindCardSortable();
             List.card.decoCard({ addedCard: 'FALSE', list: lastList });
-            // List.form.bindNewListForm(l  tListObj, planId);
+            //List.form.bindNewListForm(lastListObj, planId);
             //binde old card
-            List.form.bindAll(); //testing 
+            List.form.bindAll(); //testing
 
+            //ui patch
             List.uipatch.applyNewListWidth();
             List.uipatch.applyNewCardPropColWidth();
             List.uipatch.setListBoxMaxHeight();
@@ -246,54 +206,16 @@ var List =
         },
         renderNewList: function(plan)
         {
-            var listTemp = 
-                "<div class='list'>" + 
-                    "<div class='list-title-banner'>" + 
-                        "<span class='list-title' data-pk=" + plan.id + '>' + plan.name + "</span>" +  //@@ should put plan's title
-                    "</div>" + 
-                    "<div class='list-box'>" + 
-                        "<div class='in-list clearfix'>" +
-                            "<div class='block'></div>" + 
-                        '</div>' + 
-                    '</div>' + 
-                    "<a id='add-card' href='#'>Add a card…</a>" + 
-                '</div>';
-            return listTemp;
+            // console.log('%c see plan', 'background: #222; color: red', plan);
+            return _.template( AppConfig.listTpl, plan);
         },
-        renderNewItems: function(item)
+        renderNewItems: function(items)
         {
-            console.log('check Model before render items', item);         
             var cardViews = [];
-            cardViews = _.map(item, function(item){
-                var view =
-                    "<div class='card'>" + 
-                        "<div class='card-header'>" + 
-                        "<span class='card-title' data-pk=" + item.id + '>' + item.item_name + '</span>' + 
-                        '</div>' +
-                            "<div class='card-content'>" +
-                            "<table>" + 
-                            "<thead>" +                            
-                            "<tr>" + 
-                            "<th>" + "</th>" + 
-                            "<th>" + "</th>" + 
-                            "</tr>" +
-                            "</thead>" +
-                            "<tbody>" + 
-                                    "<tr>" + 
-                                        "<td id=item-col>" + item.info_type + "</td>" + 
-                                        "<td id=value-col class='info-content'>" + item.info_content + "</td>" + 
-                                    "</tr>" + 
-                                    "<tr>" + 
-                                        "<td>" + "位置</td>" + 
-                                        "<td class='latlng'>" + item.lat + ',' + item.lng + "</td>" + 
-                                    "</tr>" + 
-                            "</tbody>" + 
-                            "</table>" + 
-                        "</div>" + 
-                    "</div>";
-                return view;
+            cardViews = _.map(items, function(item) {
+                return _.template(AppConfig.cardTpl, item);
             });
-            console.log('_.map', cardViews);
+            // console.log('_.map', cardViews);
             return cardViews;
         },
         bindListSortable: function()
@@ -332,7 +254,8 @@ var List =
         add: function(addCardElement)
         {
             var thisInList = addCardElement.parent().find('.in-list');
-            thisInList.find('.block').before(AppConfig.cardDom);
+            thisInList.find('.block').before(AppConfig.nullCardTpl);
+            // thisInList.find('.block').before(AppConfig.cardDom);
             List.card.decoCard({
                 addedCard: 'TRUE',
                 whichInlist: thisInList //current .in-list
@@ -477,10 +400,7 @@ var List =
     {
         remove: function(obj , config){ //remove(obj, {id:127})
             return _.without(obj, _.findWhere(obj, config));
-        },
-        ini: function(){
-            
-        }
+        }    
     }
 };
 
@@ -488,9 +408,9 @@ Data = {
     plan: {
         fetch: function(userName) {
             var promise = $.Deferred();
-             $.getJSON( Api + User.name + '/plans/', function(data){ promise.resolve(data); })
-             .fail(function() { console.log('fetch plan info faild'); });
-             return promise;
+            $.getJSON( Api + User.name + '/plans/', function(data){ promise.resolve(data); })
+            .fail(function() { console.log('fetch plan info faild'); });
+            return promise;
         }
     },
     item: {       
@@ -511,68 +431,68 @@ Data = {
     } 
 };
 
-var Zone = {
-    iniUI: function() {
-        $('.close-alert').click(function(){ $('.alert').hide(); })
-    }
-};
+// var Zone = {
+//     iniUiEvents: function() {
+//         $('.close-alert').click(function(){ $('.alert').hide(); });
+//     }
+// };
 
-var initialize = function(){
-    AppConfig.zone = $('#zone');
-    var userModel = $('#userModel');
-    //prepare user data
-    User = {
-        name: userModel.find('div[data-name]').data('name'),
-        id: userModel.find('div[data-id]').data('id'),
-        tokenKey: userModel.find('div[data-tokenKey]').data('tokenkey')       
-    };
-    //prepare uipatch 
-    $.fn.editable.defaults.mode = 'inline';
-    List.uipatch.fadeInBackgroundImg();
-    List.uipatch.scrollBarDragFix();    
-    localStorage.clientWidth = document.body.clientWidth;
-    Zone.iniUI();
-};
+// var initialize = function(){
+//     AppConfig.zone = $('#zone');
+//     var userModel = $('#userModel');
+//     //prepare user data
+//     User = {
+//         name: userModel.find('div[data-name]').data('name'),
+//         id: userModel.find('div[data-id]').data('id'),
+//         tokenKey: userModel.find('div[data-tokenKey]').data('tokenkey')       
+//     };
+//     //prepare uipatch 
+//     $.fn.editable.defaults.mode = 'inline';
+//     List.uipatch.fadeInBackgroundImg();
+//     List.uipatch.scrollBarDragFix();    
+//     localStorage.clientWidth = document.body.clientWidth;
+//     Zone.iniUiEvents();
+// };
 
-$(function() {
-    initialize();
-    console.log(User);
-    var planId = 1;
+// $(function() {
+//     initialize();
+//     console.log(User);
+//     var planId = 1;
 
-    //get all plandata of user and set Model
-    var plans = new PlanItemsCollection();
-    $.when(
-        Data.plan.fetch(),
-        Data.item.fetchAll()
-    ).then(function(planData, itemData) {
-        console.log('%c planData', 'background: #222; color: #bada55', planData);
-        console.log('%c planData.result', 'background: #222; color: #bada55', planData.result);
-        console.log('%c itemData', 'background: #222; color: #bada55', itemData);
-        console.log('%c itemData.result', 'background: #222; color: #bada55', itemData.result);
+//     //get all plandata of user and set Model
+//     var plans = new PlanItemsCollection();
+//     $.when(
+//         Data.plan.fetch(),
+//         Data.item.fetchAll()
+//     ).then(function(planData, itemData) {
+//         console.log('%c planData', 'background: #222; color: #bada55', planData);
+//         console.log('%c planData.result', 'background: #222; color: #bada55', planData.result);
+//         console.log('%c itemData', 'background: #222; color: #bada55', itemData);
+//         console.log('%c itemData.result', 'background: #222; color: #bada55', itemData.result);
 
-        /* -----------------------------------------
-        //  Model Structure:
-        //  plans (PlanItemsCollection) 
-        //     itemBox (ItemBox) 
-        //         itemCol (ItemsCollection)
-        ------------------------------------------*/
-        itemData.result.forEach(function(itemSet) {
-            var itemCol = new ItemsCollection(itemSet, {parse: true});
-            console.log('result itemsSET: ', itemSet);
-            var planObj = _.find(planData.result, function(planInfo){ return planInfo.id == itemSet.result.plan_id; });
-            var itemBox = new ItemBox(planObj);
-                itemBox.items = itemCol;
-                plans.add(itemBox);
-        });
-        Model.plans = plans;
-        List.list.appendByLoading(1);
-        //begin render
-    });
+//         /* -----------------------------------------
+//         //  Model Structure:
+//         //  plans (PlanItemsCollection) 
+//         //     itemBox (ItemBox) 
+//         //         itemCol (ItemsCollection)
+//         ------------------------------------------*/
+//         itemData.result.forEach(function(itemSet) {
+//             var itemCol = new ItemsCollection(itemSet, {parse: true});
+//             console.log('result itemsSET: ', itemSet);
+//             var planObj = _.find(planData.result, function(planInfo){ return planInfo.id == itemSet.result.plan_id; });
+//             var itemBox = new ItemBox(planObj);
+//                 itemBox.items = itemCol;
+//                 plans.add(itemBox);
+//         });
+//         Model.plans = plans;
+//         List.list.appendByLoading(1);
+//         //begin render
+//     });
 
-    //Zone.iniEvents
-    AppConfig.zone.on('click', '.list #add-card', function() { List.card.add($(this)); })
-        .on('mouseover','.ui-icon-minusthick, .ui-icon-plusthick', function(e){ $(e.currentTarget).parents().find('.in-list').sortable('disable')} )
-        .on('mouseout','.ui-icon-minusthick, .ui-icon-plusthick', function(e){ $(e.currentTarget).parents().find('.in-list').sortable('enable')} )
-    $(window).resize(function() { List.uipatch.setListBoxMaxHeight(); })
-            .unload(function() {localStorage.clear(); });
-});
+//     //Zone.iniEvents
+//     AppConfig.zone.on('click', '.list #add-card', function() { List.card.add($(this)); })
+//         .on('mouseover','.ui-icon-minusthick, .ui-icon-plusthick', function(e){ $(e.currentTarget).parents().find('.in-list').sortable('disable')} )
+//         .on('mouseout','.ui-icon-minusthick, .ui-icon-plusthick', function(e){ $(e.currentTarget).parents().find('.in-list').sortable('enable')} )
+//     $(window).resize(function() { List.uipatch.setListBoxMaxHeight(); })
+//             .unload(function() {localStorage.clear(); });
+// });
